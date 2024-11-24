@@ -1,5 +1,7 @@
 package com.lent.serverstatssender
 
+import me.lucko.spark.api.statistic.StatisticWindow.TicksPerSecond
+import me.lucko.spark.api.statistic.types.DoubleStatistic
 import net.dv8tion.jda.api.JDA
 import net.dv8tion.jda.api.JDABuilder
 import net.dv8tion.jda.api.entities.Activity
@@ -15,8 +17,12 @@ import org.bukkit.event.player.PlayerJoinEvent
 import org.bukkit.plugin.PluginManager
 import org.bukkit.plugin.java.JavaPlugin
 import org.bukkit.scheduler.BukkitTask
+import kotlin.math.roundToInt
+
 
 class Main : JavaPlugin(), CommandExecutor, Listener {
+    val tps: DoubleStatistic<TicksPerSecond>? = spark.tps()
+    val tpsLast10Secs = tps?.poll(TicksPerSecond.SECONDS_10)?.roundToInt() ?: 0
 
     lateinit var jda: JDA private set
     lateinit var statsConfig: Config private set
@@ -38,6 +44,7 @@ class Main : JavaPlugin(), CommandExecutor, Listener {
         plugin = this
         saveDefaultConfig()
         statsConfig = Config.load(this)
+
 
         getCommand("sssreload")?.setExecutor(this)
         getCommand("sssactivate")?.setExecutor(ActivateToken())
@@ -91,4 +98,11 @@ class Main : JavaPlugin(), CommandExecutor, Listener {
         sender.sendMessage("${ChatColor.GREEN}${ChatColor.BOLD}Success! ${ChatColor.WHITE}Server Stats Bot config reloaded")
         return true
     }
+    fun onTpsLow() {
+        if (tpsLast10Secs <= 10) {
+        val channel = jda.getTextChannelById(statsConfig.chanid)
+        channel?.sendMessageEmbeds(getEmbedTPS(statsConfig))?.queue()
+    }
+    }
+
 }

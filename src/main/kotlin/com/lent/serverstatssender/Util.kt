@@ -19,7 +19,16 @@ val spark = SparkProvider.get()
 fun getEmbed(config: Config) = EmbedBuilder()
     .setTitle(config.embedTitle)
     .setColor(Color.BLACK)
-    .addField("Statistics:", infoField, false)
+    .addField("WARNING:", infoField, false)
+    .apply {
+        if (config.imageURL.isNotEmpty()) setImage(config.imageURL)
+    }
+    .build()
+
+fun getEmbedTPS(config: Config) = EmbedBuilder()
+    .setTitle(config.embedTitle)
+    .setColor(Color.BLACK)
+    .addField("Statistics:", warnInfo, false)
     .apply {
         if (config.imageURL.isNotEmpty()) setImage(config.imageURL)
     }
@@ -27,6 +36,16 @@ fun getEmbed(config: Config) = EmbedBuilder()
 
 private val decimalFormatter = DecimalFormat.getNumberInstance().apply {
     maximumFractionDigits = 2
+}
+
+val warnInfo: String get() {
+    val tps: DoubleStatistic<TicksPerSecond>? = spark.tps()
+    val tpsLast10Secs = tps?.poll(TicksPerSecond.SECONDS_10)?.roundToInt() ?: 0
+
+    return """
+        TPS LOW:
+        > $tpsLast10Secs
+    """.trimIndent()
 }
 
 val infoField: String get() {

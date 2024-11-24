@@ -1,5 +1,6 @@
 package com.lent.serverstatssender
 
+import net.dv8tion.jda.api.entities.channel.Channel
 import net.dv8tion.jda.api.events.guild.GuildReadyEvent
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent
 import net.dv8tion.jda.api.hooks.ListenerAdapter
@@ -26,5 +27,7 @@ class DiscordListener(val plugin: Main): ListenerAdapter() {
             .addCommands(cmdName?.let { Commands.slash(it, "Shows the server stats.") })
             .queue()
     }
+
+
 
 }
