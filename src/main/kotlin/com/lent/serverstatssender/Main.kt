@@ -21,8 +21,7 @@ import kotlin.math.roundToInt
 
 
 class Main : JavaPlugin(), CommandExecutor, Listener {
-    val tps: DoubleStatistic<TicksPerSecond>? = spark.tps()
-    val tpsLast10Secs = tps?.poll(TicksPerSecond.SECONDS_10)?.roundToInt() ?: 0
+
 
     lateinit var jda: JDA private set
     lateinit var statsConfig: Config private set
@@ -81,10 +80,13 @@ class Main : JavaPlugin(), CommandExecutor, Listener {
     }
 
     private fun scheduleMethod() {
+        val tps: DoubleStatistic<TicksPerSecond>? = spark.tps()
+        val tpsLastMin = tps?.poll(TicksPerSecond.MINUTES_1)?.roundToInt() ?: 0
         scheduleThingy = scheduleTimer(statsConfig.timeIntervalTicks.toLong()) {
             if (!isBotEnabled || !statsConfig.repeat) return@scheduleTimer
             val channel = jda.getTextChannelById(statsConfig.chanid) ?: return@scheduleTimer
             if (statsConfig.embed) channel.sendMessageEmbeds(getEmbed(statsConfig)).queue()
+            if (tpsLastMin <= 10) {onTpsLow()}
             else channel.sendMessage(infoField).queue()
         }
     }
@@ -98,11 +100,9 @@ class Main : JavaPlugin(), CommandExecutor, Listener {
         sender.sendMessage("${ChatColor.GREEN}${ChatColor.BOLD}Success! ${ChatColor.WHITE}Server Stats Bot config reloaded")
         return true
     }
-    fun onTpsLow() {
-        if (tpsLast10Secs <= 10) {
-        val channel = jda.getTextChannelById(statsConfig.chanid)
-        channel?.sendMessageEmbeds(getEmbedTPS(statsConfig))?.queue()
-    }
+    private fun onTpsLow() {
+            val channel = jda.getTextChannelById(statsConfig.chanid)
+            channel?.sendMessageEmbeds(getEmbedTPS(statsConfig))?.queue()
+        }
     }
 
-}

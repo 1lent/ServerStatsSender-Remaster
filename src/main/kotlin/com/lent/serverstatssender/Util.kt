@@ -19,7 +19,7 @@ val spark = SparkProvider.get()
 fun getEmbed(config: Config) = EmbedBuilder()
     .setTitle(config.embedTitle)
     .setColor(Color.BLACK)
-    .addField("WARNING:", infoField, false)
+    .addField("Statistics:", infoField, false)
     .apply {
         if (config.imageURL.isNotEmpty()) setImage(config.imageURL)
     }
@@ -27,8 +27,8 @@ fun getEmbed(config: Config) = EmbedBuilder()
 
 fun getEmbedTPS(config: Config) = EmbedBuilder()
     .setTitle(config.embedTitle)
-    .setColor(Color.BLACK)
-    .addField("Statistics:", warnInfo, false)
+    .setColor(Color.RED)
+    .addField("WARNING:", warnInfo, false)
     .apply {
         if (config.imageURL.isNotEmpty()) setImage(config.imageURL)
     }
@@ -40,11 +40,10 @@ private val decimalFormatter = DecimalFormat.getNumberInstance().apply {
 
 val warnInfo: String get() {
     val tps: DoubleStatistic<TicksPerSecond>? = spark.tps()
-    val tpsLast10Secs = tps?.poll(TicksPerSecond.SECONDS_10)?.roundToInt() ?: 0
-
+    val tpsLastMin = tps?.poll(TicksPerSecond.MINUTES_1)?.roundToInt() ?: 0
     return """
         TPS LOW:
-        > $tpsLast10Secs
+        > $tpsLastMin
     """.trimIndent()
 }
 
@@ -52,6 +51,8 @@ val infoField: String get() {
     val tps: DoubleStatistic<TicksPerSecond>? = spark.tps()
     val tpsLast10Secs = tps?.poll(TicksPerSecond.SECONDS_10)?.roundToInt() ?: 0
     val tpsLast5Mins = tps?.poll(TicksPerSecond.MINUTES_5)?.roundToInt() ?: 0
+    val tpsLastMin = tps?.poll(TicksPerSecond.MINUTES_1)?.roundToInt() ?: 0
+
     val cpuUsage: DoubleStatistic<StatisticWindow.CpuUsage> = spark.cpuSystem()
     val usageLastMin = cpuUsage.poll(StatisticWindow.CpuUsage.MINUTES_1)
     val cpuShit = usageLastMin * 100
